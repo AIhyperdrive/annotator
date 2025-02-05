@@ -44,24 +44,27 @@ const ImageCanvas = ({
         const img = new Image();
         img.onload = () => {
           setImage(img);
-          if (canvasRef.current) {
-            const ctx = canvasRef.current.getContext("2d");
-            if (ctx) {
-              ctx.clearRect(
-                0,
-                0,
-                canvasRef.current.width,
-                canvasRef.current.height,
-              );
-              ctx.drawImage(
-                img,
-                0,
-                0,
-                canvasRef.current.width,
-                canvasRef.current.height,
-              );
+          // Draw image immediately after it loads
+          requestAnimationFrame(() => {
+            if (canvasRef.current) {
+              const ctx = canvasRef.current.getContext("2d");
+              if (ctx) {
+                ctx.clearRect(
+                  0,
+                  0,
+                  canvasRef.current.width,
+                  canvasRef.current.height,
+                );
+                ctx.drawImage(
+                  img,
+                  0,
+                  0,
+                  canvasRef.current.width,
+                  canvasRef.current.height,
+                );
+              }
             }
-          }
+          });
         };
         img.src = e.target?.result as string;
       };
@@ -271,6 +274,23 @@ const ImageCanvas = ({
     },
     [isDrawing, startPos, imageFileName, onRegionSelect, selectedTool],
   );
+
+  // Effect to draw image when canvas or image changes
+  React.useEffect(() => {
+    if (image && canvasRef.current) {
+      const ctx = canvasRef.current.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.drawImage(
+          image,
+          0,
+          0,
+          canvasRef.current.width,
+          canvasRef.current.height,
+        );
+      }
+    }
+  }, [image]);
 
   return (
     <Card className="p-4 bg-white w-full h-full flex flex-col items-center justify-center">
