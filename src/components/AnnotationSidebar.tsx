@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
+import { Switch } from "./ui/switch";
 import { ScrollArea } from "./ui/scroll-area";
 import { Trash2, Edit2, Download } from "lucide-react";
 import {
@@ -13,15 +14,17 @@ import {
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 
+interface Point {
+  x: number;
+  y: number;
+}
+
 interface Annotation {
   id: string;
   text: string;
-  coordinates: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
+  type: "rectangle" | "polygon";
+  coordinates: Point[];
+  visible?: boolean;
 }
 
 interface AnnotationSidebarProps {
@@ -30,6 +33,7 @@ interface AnnotationSidebarProps {
   onDelete?: (id: string) => void;
   onExport?: () => void;
   onAnnotationHover?: (id: string | null) => void;
+  onToggleVisibility?: (id: string) => void;
 }
 
 const AnnotationSidebar = ({
@@ -49,6 +53,7 @@ const AnnotationSidebar = ({
   onDelete = () => {},
   onExport = () => {},
   onAnnotationHover = () => {},
+  onToggleVisibility = () => {},
 }: AnnotationSidebarProps) => {
   const [editingAnnotation, setEditingAnnotation] = useState<Annotation | null>(
     null,
@@ -97,7 +102,12 @@ const AnnotationSidebar = ({
                   </p>
                   <p className="text-foreground">{annotation.text}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={annotation.visible !== false}
+                    onCheckedChange={() => onToggleVisibility(annotation.id)}
+                    aria-label="Toggle annotation visibility"
+                  />
                   <Button
                     variant="ghost"
                     size="icon"

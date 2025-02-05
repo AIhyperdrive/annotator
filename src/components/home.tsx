@@ -21,6 +21,7 @@ interface Annotation {
   imageFile: string;
   type: "rectangle" | "polygon";
   coordinates: Point[];
+  visible?: boolean;
 }
 
 const Home = () => {
@@ -56,6 +57,16 @@ const Home = () => {
   const [hoveredAnnotation, setHoveredAnnotation] = useState<string | null>(
     null,
   );
+
+  const handleToggleVisibility = (id: string) => {
+    setAnnotations(
+      annotations.map((ann) =>
+        ann.id === id
+          ? { ...ann, visible: ann.visible === false ? true : false }
+          : ann,
+      ),
+    );
+  };
 
   const handleRegionSelect = (region: Region) => {
     const newAnnotation: Annotation = {
@@ -108,6 +119,7 @@ const Home = () => {
               id: ann.id,
               type: ann.type,
               coordinates: ann.coordinates,
+              visible: ann.visible,
             }))}
             selectedTool={selectedTool}
           />
@@ -118,6 +130,7 @@ const Home = () => {
           onDelete={handleAnnotationDelete}
           onExport={handleExport}
           onAnnotationHover={setHoveredAnnotation}
+          onToggleVisibility={handleToggleVisibility}
         />
       </div>
     </div>

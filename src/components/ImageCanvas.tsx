@@ -17,7 +17,7 @@ interface Region {
 
 interface ImageCanvasProps {
   onRegionSelect?: (region: Region) => void;
-  selectedRegions?: Region[];
+  selectedRegions?: (Region & { visible?: boolean })[];
   imageUrl?: string;
   selectedTool?: "rectangle" | "freeform";
 }
@@ -85,7 +85,25 @@ const ImageCanvas = ({
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
     }
 
-    // Draw polygon points and lines
+    // Draw existing regions
+    selectedRegions?.forEach((region) => {
+      if (region.visible !== false) {
+        ctx.beginPath();
+        ctx.moveTo(region.coordinates[0].x, region.coordinates[0].y);
+        region.coordinates.forEach((point, index) => {
+          if (index > 0) {
+            ctx.lineTo(point.x, point.y);
+          }
+        });
+        // Close the shape
+        ctx.lineTo(region.coordinates[0].x, region.coordinates[0].y);
+        ctx.strokeStyle = "#00ff00";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    });
+
+    // Draw current polygon points and lines
     if (points.length > 0) {
       ctx.beginPath();
       ctx.moveTo(points[0].x, points[0].y);
@@ -104,7 +122,7 @@ const ImageCanvas = ({
       ctx.lineWidth = 2;
       ctx.stroke();
     }
-  }, [points, image]);
+  }, [points, image, selectedRegions]);
 
   const handleCanvasClick = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -278,19 +296,9 @@ const ImageCanvas = ({
   // Effect to draw image when canvas or image changes
   React.useEffect(() => {
     if (image && canvasRef.current) {
-      const ctx = canvasRef.current.getContext("2d");
-      if (ctx) {
-        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        ctx.drawImage(
-          image,
-          0,
-          0,
-          canvasRef.current.width,
-          canvasRef.current.height,
-        );
-      }
+      redrawCanvas();
     }
-  }, [image]);
+  }, [image, redrawCanvas, selectedRegions]);
 
   return (
     <Card className="p-4 bg-white w-full h-full flex flex-col items-center justify-center">
