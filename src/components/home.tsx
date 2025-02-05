@@ -3,24 +3,24 @@ import ImageCanvas from "./ImageCanvas";
 import AnnotationSidebar from "./AnnotationSidebar";
 import ToolBar from "./ToolBar";
 
-interface Region {
-  id: string;
+interface Point {
   x: number;
   y: number;
-  width: number;
-  height: number;
+}
+
+interface Region {
+  id: string;
+  type: "rectangle" | "polygon";
+  coordinates: Point[];
+  imageFile?: string;
 }
 
 interface Annotation {
   id: string;
   text: string;
   imageFile: string;
-  coordinates: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
+  type: "rectangle" | "polygon";
+  coordinates: Point[];
 }
 
 const Home = () => {
@@ -31,13 +31,25 @@ const Home = () => {
     {
       id: "1",
       text: "Sample annotation 1",
-      coordinates: { x: 100, y: 100, width: 200, height: 150 },
+      type: "rectangle",
+      coordinates: [
+        { x: 100, y: 100 },
+        { x: 300, y: 100 },
+        { x: 300, y: 250 },
+        { x: 100, y: 250 },
+      ],
       imageFile: "example.jpg",
     },
     {
       id: "2",
       text: "Sample annotation 2",
-      coordinates: { x: 300, y: 200, width: 150, height: 100 },
+      type: "rectangle",
+      coordinates: [
+        { x: 300, y: 200 },
+        { x: 450, y: 200 },
+        { x: 450, y: 300 },
+        { x: 300, y: 300 },
+      ],
       imageFile: "example.jpg",
     },
   ]);
@@ -50,12 +62,8 @@ const Home = () => {
       id: Date.now().toString(),
       text: "New annotation",
       imageFile: region.imageFile || "",
-      coordinates: {
-        x: region.x,
-        y: region.y,
-        width: region.width,
-        height: region.height,
-      },
+      type: region.type,
+      coordinates: region.coordinates,
     };
     setAnnotations([...annotations, newAnnotation]);
   };
@@ -98,8 +106,10 @@ const Home = () => {
             onRegionSelect={handleRegionSelect}
             selectedRegions={annotations.map((ann) => ({
               id: ann.id,
-              ...ann.coordinates,
+              type: ann.type,
+              coordinates: ann.coordinates,
             }))}
+            selectedTool={selectedTool}
           />
         </div>
         <AnnotationSidebar

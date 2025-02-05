@@ -3,12 +3,15 @@ import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Upload, Image as ImageIcon } from "lucide-react";
 
-interface Region {
-  id: string;
+interface Point {
   x: number;
   y: number;
-  width: number;
-  height: number;
+}
+
+interface Region {
+  id: string;
+  type: "rectangle" | "polygon";
+  coordinates: Point[];
   imageFile?: string;
 }
 
@@ -16,18 +19,21 @@ interface ImageCanvasProps {
   onRegionSelect?: (region: Region) => void;
   selectedRegions?: Region[];
   imageUrl?: string;
+  selectedTool?: "rectangle" | "freeform";
 }
 
 const ImageCanvas = ({
   onRegionSelect = () => {},
   selectedRegions = [],
   imageUrl = "",
+  selectedTool = "rectangle",
 }: ImageCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [imageFileName, setImageFileName] = useState<string>("");
+  const [points, setPoints] = useState<Point[]>([]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -65,7 +71,39 @@ const ImageCanvas = ({
     }
   };
 
-  const startDrawing = useCallback(
+  const redrawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx || !canvas) return;
+
+    // Clear and draw image
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (image) {
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    }
+
+    // Draw polygon points and lines
+    if (points.length > 0) {
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      points.forEach((point, index) => {
+        if (index > 0) {
+          ctx.lineTo(point.x, point.y);
+        }
+        // Draw point
+        ctx.fillStyle = "#00ff00";
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
+        ctx.fill();
+      });
+      // Connect lines
+      ctx.strokeStyle = "#00ff00";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }, [points, image]);
+
+  const handleCanvasClick = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -74,15 +112,91 @@ const ImageCanvas = ({
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
 
-      setIsDrawing(true);
-      setStartPos({ x, y });
+      if (selectedTool === "rectangle") {
+        if (event.button === 0) {
+          // Left click
+          setIsDrawing(true);
+          setStartPos({ x, y });
+        }
+      } else if (selectedTool === "freeform") {
+        if (event.button === 0 && points.length < 10) {
+          // Left click and under 10 points
+          const newPoints = [...points, { x, y }];
+          setPoints(newPoints);
+          // Redraw canvas with new point
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.fillStyle = "#00ff00";
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            if (points.length > 0) {
+              ctx.beginPath();
+              ctx.moveTo(
+                points[points.length - 1].x,
+                points[points.length - 1].y,
+              );
+              ctx.lineTo(x, y);
+              ctx.strokeStyle = "#00ff00";
+              ctx.lineWidth = 2;
+              ctx.stroke();
+            }
+          }
+        } else if (event.button === 2 && points.length >= 3) {
+          // Right click with at least 3 points
+          // Close the polygon
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.beginPath();
+            ctx.moveTo(
+              points[points.length - 1].x,
+              points[points.length - 1].y,
+            );
+            ctx.lineTo(points[0].x, points[0].y);
+            ctx.strokeStyle = "#00ff00";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+
+          // Create polygon region with clockwise points
+          const center = points.reduce(
+            (acc, point) => ({
+              x: acc.x + point.x / points.length,
+              y: acc.y + point.y / points.length,
+            }),
+            { x: 0, y: 0 },
+          );
+
+          // Sort points clockwise
+          const sortedPoints = [...points].sort((a, b) => {
+            const angleA = Math.atan2(a.y - center.y, a.x - center.x);
+            const angleB = Math.atan2(b.y - center.y, b.x - center.x);
+            return angleA - angleB;
+          });
+
+          const newRegion = {
+            id: Date.now().toString(),
+            type: "polygon" as const,
+            coordinates: sortedPoints,
+            imageFile: imageFileName,
+          };
+
+          onRegionSelect(newRegion);
+          setPoints([]);
+          setIsDrawing(false);
+
+          // Redraw canvas to clear the polygon
+          redrawCanvas();
+        }
+      }
     },
-    [],
+    [selectedTool, points, imageFileName, onRegionSelect, redrawCanvas],
   );
 
   const draw = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!isDrawing || !canvasRef.current) return;
+      if (!canvasRef.current) return;
+      if (selectedTool === "rectangle" && !isDrawing) return;
 
       const canvas = canvasRef.current;
       const ctx = canvas.getContext("2d");
@@ -92,28 +206,36 @@ const ImageCanvas = ({
       const currentX = event.clientX - rect.left;
       const currentY = event.clientY - rect.top;
 
-      // Redraw the image
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (image) {
-        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-      }
+      // Redraw the image and existing points
+      redrawCanvas();
 
-      // Draw the selection rectangle
-      ctx.strokeStyle = "#00ff00";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(
-        startPos.x,
-        startPos.y,
-        currentX - startPos.x,
-        currentY - startPos.y,
-      );
+      if (selectedTool === "rectangle" && isDrawing) {
+        // Draw the selection rectangle
+        ctx.strokeStyle = "#00ff00";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(
+          startPos.x,
+          startPos.y,
+          currentX - startPos.x,
+          currentY - startPos.y,
+        );
+      } else if (selectedTool === "freeform" && points.length > 0) {
+        // Draw line from last point to current mouse position
+        ctx.beginPath();
+        ctx.moveTo(points[points.length - 1].x, points[points.length - 1].y);
+        ctx.lineTo(currentX, currentY);
+        ctx.strokeStyle = "#00ff00";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
     },
-    [isDrawing, startPos, image],
+    [isDrawing, startPos, points, selectedTool, redrawCanvas],
   );
 
   const stopDrawing = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!isDrawing || !canvasRef.current) return;
+      if (!isDrawing || !canvasRef.current || selectedTool !== "rectangle")
+        return;
 
       const canvas = canvasRef.current;
       const rect = canvas.getBoundingClientRect();
@@ -122,17 +244,32 @@ const ImageCanvas = ({
 
       const newRegion = {
         id: Date.now().toString(),
-        x: Math.min(startPos.x, currentX),
-        y: Math.min(startPos.y, currentY),
-        width: Math.abs(currentX - startPos.x),
-        height: Math.abs(currentY - startPos.y),
+        type: "rectangle" as const,
+        coordinates: [
+          {
+            x: Math.min(startPos.x, currentX),
+            y: Math.min(startPos.y, currentY),
+          },
+          {
+            x: Math.max(startPos.x, currentX),
+            y: Math.min(startPos.y, currentY),
+          },
+          {
+            x: Math.max(startPos.x, currentX),
+            y: Math.max(startPos.y, currentY),
+          },
+          {
+            x: Math.min(startPos.x, currentX),
+            y: Math.max(startPos.y, currentY),
+          },
+        ],
         imageFile: imageFileName,
       };
 
       onRegionSelect(newRegion);
       setIsDrawing(false);
     },
-    [isDrawing, startPos, onRegionSelect],
+    [isDrawing, startPos, imageFileName, onRegionSelect, selectedTool],
   );
 
   return (
@@ -164,10 +301,14 @@ const ImageCanvas = ({
           width={800}
           height={600}
           className="border border-gray-200 cursor-crosshair"
-          onMouseDown={startDrawing}
+          onMouseDown={handleCanvasClick}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
           onMouseLeave={() => setIsDrawing(false)}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            handleCanvasClick(e);
+          }}
         />
       )}
     </Card>
