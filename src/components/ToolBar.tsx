@@ -6,26 +6,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
-import { Square, Pencil, Undo2, Redo2, Download } from "lucide-react";
+import { Square, Pencil, Download, Send, ArrowRight } from "lucide-react";
 
 interface ToolBarProps {
   onToolSelect?: (tool: "rectangle" | "freeform") => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
+  onSubmit?: () => void;
+  onNext?: () => void;
   onExport?: () => void;
   selectedTool?: "rectangle" | "freeform";
-  canUndo?: boolean;
-  canRedo?: boolean;
 }
 
 const ToolBar = ({
   onToolSelect = () => {},
-  onUndo = () => {},
-  onRedo = () => {},
+  onSubmit = () => {},
+  onNext = () => {},
   onExport = () => {},
   selectedTool = "rectangle",
-  canUndo = false,
-  canRedo = false,
 }: ToolBarProps) => {
   return (
     <div className="h-[60px] w-full bg-background border-b flex items-center px-4 gap-4">
@@ -72,16 +68,16 @@ const ToolBar = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="outline"
-                size="icon"
-                onClick={onUndo}
-                disabled={!canUndo}
+                variant="default"
+                onClick={onSubmit}
+                className="flex items-center gap-2"
               >
-                <Undo2 className="h-4 w-4" />
+                <Send className="h-4 w-4" />
+                Submit
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Undo</p>
+              <p>Submit Annotations</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -91,15 +87,15 @@ const ToolBar = ({
             <TooltipTrigger asChild>
               <Button
                 variant="outline"
-                size="icon"
-                onClick={onRedo}
-                disabled={!canRedo}
+                onClick={onNext}
+                className="flex items-center gap-2"
               >
-                <Redo2 className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4" />
+                Next
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Redo</p>
+              <p>Next Image</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

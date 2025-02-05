@@ -89,6 +89,41 @@ const Home = () => {
     setAnnotations(annotations.filter((ann) => ann.id !== id));
   };
 
+  const handleSubmit = async () => {
+    // Placeholder function for submitting annotations to server
+    try {
+      console.log("Submitting annotations:", annotations);
+      // const response = await fetch('your-api-endpoint', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(annotations)
+      // });
+      // const data = await response.json();
+      // console.log('Server response:', data);
+    } catch (error) {
+      console.error("Error submitting annotations:", error);
+    }
+  };
+
+  const handleNext = async () => {
+    // Placeholder function for fetching next image and annotations
+    try {
+      // const response = await fetch('your-api-endpoint/next');
+      // const data = await response.json();
+      // setImage(data.image);
+      // setAnnotations(data.annotations);
+      setAnnotations([]);
+      // Clear the canvas
+      const canvas = document.querySelector("canvas");
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx?.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    } catch (error) {
+      console.error("Error fetching next image:", error);
+    }
+  };
+
   const handleExport = () => {
     const exportData = JSON.stringify(annotations, null, 2);
     const blob = new Blob([exportData], { type: "application/json" });
@@ -108,8 +143,8 @@ const Home = () => {
         selectedTool={selectedTool}
         onToolSelect={setSelectedTool}
         onExport={handleExport}
-        canUndo={false}
-        canRedo={false}
+        onSubmit={handleSubmit}
+        onNext={handleNext}
       />
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1">
