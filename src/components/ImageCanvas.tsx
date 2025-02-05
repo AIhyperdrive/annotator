@@ -57,6 +57,8 @@ const ImageCanvas = ({
         img.src = e.target?.result as string;
       };
       reader.readAsDataURL(file);
+      // Clear the input value so the same file can be selected again if needed
+      event.target.value = "";
     }
   };
 
@@ -144,15 +146,10 @@ const ImageCanvas = ({
             />
             <Button
               onClick={() => document.getElementById("image-upload")?.click()}
-              asChild
+              className="flex items-center gap-2"
             >
-              <label
-                htmlFor="image-upload"
-                className="flex items-center cursor-pointer"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Image
-              </label>
+              <Upload className="w-4 h-4" />
+              Upload Image
             </Button>
           </div>
         </div>
