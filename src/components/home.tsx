@@ -14,6 +14,7 @@ interface Region {
 interface Annotation {
   id: string;
   text: string;
+  imageFile: string;
   coordinates: {
     x: number;
     y: number;
@@ -31,11 +32,13 @@ const Home = () => {
       id: "1",
       text: "Sample annotation 1",
       coordinates: { x: 100, y: 100, width: 200, height: 150 },
+      imageFile: "example.jpg",
     },
     {
       id: "2",
       text: "Sample annotation 2",
       coordinates: { x: 300, y: 200, width: 150, height: 100 },
+      imageFile: "example.jpg",
     },
   ]);
   const [hoveredAnnotation, setHoveredAnnotation] = useState<string | null>(
@@ -46,6 +49,7 @@ const Home = () => {
     const newAnnotation: Annotation = {
       id: Date.now().toString(),
       text: "New annotation",
+      imageFile: region.imageFile || "",
       coordinates: {
         x: region.x,
         y: region.y,

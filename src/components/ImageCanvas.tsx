@@ -9,6 +9,7 @@ interface Region {
   y: number;
   width: number;
   height: number;
+  imageFile?: string;
 }
 
 interface ImageCanvasProps {
@@ -26,10 +27,12 @@ const ImageCanvas = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [imageFileName, setImageFileName] = useState<string>("");
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setImageFileName(file.name);
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
@@ -123,6 +126,7 @@ const ImageCanvas = ({
         y: Math.min(startPos.y, currentY),
         width: Math.abs(currentX - startPos.x),
         height: Math.abs(currentY - startPos.y),
+        imageFile: imageFileName,
       };
 
       onRegionSelect(newRegion);
