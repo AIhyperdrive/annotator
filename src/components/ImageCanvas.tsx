@@ -134,11 +134,7 @@ const ImageCanvas = ({
       {!image && (
         <div className="flex flex-col items-center justify-center p-8">
           <ImageIcon className="w-12 h-12 text-gray-400 mb-4" />
-          <label htmlFor="image-upload" className="cursor-pointer">
-            <Button>
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Image
-            </Button>
+          <div>
             <input
               id="image-upload"
               type="file"
@@ -146,7 +142,19 @@ const ImageCanvas = ({
               className="hidden"
               onChange={handleImageUpload}
             />
-          </label>
+            <Button
+              onClick={() => document.getElementById("image-upload")?.click()}
+              asChild
+            >
+              <label
+                htmlFor="image-upload"
+                className="flex items-center cursor-pointer"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Image
+              </label>
+            </Button>
+          </div>
         </div>
       )}
       {image && (

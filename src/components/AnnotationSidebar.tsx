@@ -123,7 +123,10 @@ const AnnotationSidebar = ({
         open={!!editingAnnotation}
         onOpenChange={() => setEditingAnnotation(null)}
       >
-        <DialogContent>
+        <DialogContent
+          className="sm:max-w-[425px]"
+          aria-describedby="edit-annotation-description"
+        >
           <DialogHeader>
             <DialogTitle>Edit Annotation</DialogTitle>
           </DialogHeader>
