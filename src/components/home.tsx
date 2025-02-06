@@ -25,6 +25,7 @@ interface Annotation {
 }
 
 const Home = () => {
+  const [clearImage, setClearImage] = useState(false);
   const [selectedTool, setSelectedTool] = useState<"rectangle" | "freeform">(
     "rectangle",
   );
@@ -89,38 +90,26 @@ const Home = () => {
     setAnnotations(annotations.filter((ann) => ann.id !== id));
   };
 
-  const handleSubmit = async () => {
-    // Placeholder function for submitting annotations to server
-    try {
-      console.log("Submitting annotations:", annotations);
-      // const response = await fetch('your-api-endpoint', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(annotations)
-      // });
-      // const data = await response.json();
-      // console.log('Server response:', data);
-    } catch (error) {
-      console.error("Error submitting annotations:", error);
-    }
+  const handleSubmit = () => {
+    alert("Submitting annotations");
   };
 
   const handleNext = async () => {
-    // Placeholder function for fetching next image and annotations
+    // Clear current state
+    setAnnotations([]);
+    setClearImage(true);
+
     try {
-      // const response = await fetch('your-api-endpoint/next');
-      // const data = await response.json();
+      const response = await fetch("/annotate/next");
+      if (!response.ok) {
+        throw new Error("No more images to annotate");
+      }
+      const data = await response.json();
+      // Here you would normally set the image and annotations from the response
       // setImage(data.image);
       // setAnnotations(data.annotations);
-      setAnnotations([]);
-      // Clear the canvas
-      const canvas = document.querySelector("canvas");
-      if (canvas) {
-        const ctx = canvas.getContext("2d");
-        ctx?.clearRect(0, 0, canvas.width, canvas.height);
-      }
     } catch (error) {
-      console.error("Error fetching next image:", error);
+      alert("No more images to annotate");
     }
   };
 
@@ -157,6 +146,8 @@ const Home = () => {
               visible: ann.visible,
             }))}
             selectedTool={selectedTool}
+            clearImage={clearImage}
+            onImageCleared={() => setClearImage(false)}
           />
         </div>
         <AnnotationSidebar

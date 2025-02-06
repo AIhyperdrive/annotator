@@ -20,6 +20,8 @@ interface ImageCanvasProps {
   selectedRegions?: (Region & { visible?: boolean })[];
   imageUrl?: string;
   selectedTool?: "rectangle" | "freeform";
+  clearImage?: boolean;
+  onImageCleared?: () => void;
 }
 
 const ImageCanvas = ({
@@ -27,6 +29,8 @@ const ImageCanvas = ({
   selectedRegions = [],
   imageUrl = "",
   selectedTool = "rectangle",
+  clearImage = false,
+  onImageCleared = () => {},
 }: ImageCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -299,6 +303,19 @@ const ImageCanvas = ({
       redrawCanvas();
     }
   }, [image, redrawCanvas, selectedRegions]);
+
+  // Effect to clear image when clearImage prop changes
+  React.useEffect(() => {
+    if (clearImage) {
+      setImage(null);
+      setImageFileName("");
+      if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext("2d");
+        ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+      onImageCleared();
+    }
+  }, [clearImage, onImageCleared]);
 
   return (
     <Card className="p-4 bg-white w-full h-full flex flex-col items-center justify-center">
